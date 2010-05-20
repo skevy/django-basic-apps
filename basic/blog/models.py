@@ -51,6 +51,8 @@ class Post(models.Model):
     title           = models.CharField(_('title'), max_length=200)
     slug            = models.SlugField(_('slug'), unique_for_date='publish')
     author          = models.ForeignKey(User, blank=True, null=True)
+    story_image     = models.ImageField(_('story image'), upload_to="story_images")
+    image_caption   = models.CharField(_('image caption'), max_length=255)
 
     markup          = MarkupField(default='markdown')
     body            = models.TextField(_('body'), )
@@ -64,6 +66,7 @@ class Post(models.Model):
     created         = models.DateTimeField(_('created'), auto_now_add=True)
     modified        = models.DateTimeField(_('modified'), auto_now=True)
     categories      = models.ManyToManyField(Category, blank=True)
+    top_story       = models.BooleanField(_('top story'))
     tags            = TagField()
     objects         = PublicManager()
 
@@ -75,9 +78,10 @@ class Post(models.Model):
         get_latest_by = 'publish'
 
     class Admin:
-        list_display  = ('title', 'publish', 'status')
+        list_display  = ('top_story', 'title', 'publish', 'status')
         list_filter   = ('publish', 'categories', 'status')
         search_fields = ('title', 'body')
+        list_editable = ('top_story')
 
     class ProxyMeta:
         title = 'title'

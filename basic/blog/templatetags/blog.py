@@ -10,6 +10,63 @@ BlogRoll = models.get_model('blog', 'blogroll')
 
 register = template.Library()
 
+class TopStory(template.Node):
+    def __init__(self, var_name):
+        self.var_name = var_name
+    
+    def render(self, context):
+        post = Post.objects.order_by('-created').filter(status=2,top_story=1)[:1]
+        if post:
+            context[self.var_name] = post[0]
+        return ''
+
+@register.tag
+def get_top_story(parser, token):
+    try:
+        tag_name, arg = token.contents.split(None, 1)
+    except ValueError:
+        raise template.TemplateSyntaxError, "%s tag requires arguments" % token.contents.split()[0]
+    m = re.search(r'as (\w+)', arg)
+    if not m:
+        raise template.TemplateSyntaxError, "%s tag had invalid arguments" % tag_name
+    var_name = m.groups()[0]
+    return TopStory(var_name)
+    
+class LatestPostsWOTop(template.Node):
+    def __init__(self, limit, var_name):
+        self.limit = int(limit)
+        self.var_name = var_name
+
+    def render(self, context):
+        posts = Post.objects.order_by('-created').filter(status=2,top_story=0)[:self.limit]
+        if posts and (self.limit == 1):
+            context[self.var_name] = posts[0]
+        else:
+            context[self.var_name] = posts
+        return ''
+
+@register.tag
+def get_latest_posts_without_top(parser, token):
+    """
+    Gets any number of latest posts and stores them in a varable.
+
+    Syntax::
+
+        {% get_latest_posts_without_top [limit] as [var_name] %}
+
+    Example usage::
+
+        {% get_latest_posts_without_top 10 as latest_post_list %}
+    """
+    try:
+        tag_name, arg = token.contents.split(None, 1)
+    except ValueError:
+        raise template.TemplateSyntaxError, "%s tag requires arguments" % token.contents.split()[0]
+    m = re.search(r'(.*?) as (\w+)', arg)
+    if not m:
+        raise template.TemplateSyntaxError, "%s tag had invalid arguments" % tag_name
+    format_string, var_name = m.groups()
+    return LatestPostsWOTop(format_string, var_name)
 
 class LatestPosts(template.Node):
     def __init__(self, limit, var_name):

@@ -9,7 +9,8 @@ class CategoryAdmin(admin.ModelAdmin):
 admin.site.register(Category, CategoryAdmin)
 
 class PostAdmin(admin.ModelAdmin):
-    list_display  = ('title', 'publish', 'status', 'visits')
+    list_display  = ('title', 'publish', 'status', 'top_story', 'visits')
+    list_editable = ('top_story', )
     list_filter   = ('publish', 'categories', 'status')
     search_fields = ('title', 'body')
     prepopulated_fields = {'slug': ('title',)}
@@ -20,18 +21,18 @@ class PostAdmin(admin.ModelAdmin):
     if blog_settings != None and blog_settings.active_editor > 1 : 
         fieldsets = (
             (None, {
-                'fields': ('title', 'slug', 'author',
+                'fields': ('title', 'slug', 'author', 'story_image', 'image_caption',
                         'body', 'tease', 'status', 'allow_comments',
-                        'publish', 'categories', 'tags', )
+                        'publish', 'categories', 'tags', 'top_story' )
             }),
 
         )
     else:
         fieldsets = (
             (None, {
-                'fields': ('title', 'slug', 'author', 'markup',
+                'fields': ('title', 'slug', 'author', 'markup', 'story_image', 'image_caption', 
                     'body', 'tease', 'status', 'allow_comments',
-                    'publish', 'categories', 'tags', )
+                    'publish', 'categories', 'tags', 'top_story' )
             }),
             ('Converted markup', {
                 'classes': ('collapse',),
@@ -53,7 +54,10 @@ class PostAdmin(admin.ModelAdmin):
 
         if db_field.name == 'author':
             queryset = models.User.objects.all()
-            field = forms.ModelChoiceField(queryset=queryset, initial=self.current_user.id)
+            if(hasattr('self', 'current_user')):
+                field = forms.ModelChoiceField(queryset=queryset, initial=self.current_user.id)
+            else:
+                field = forms.ModelChoiceField(queryset=queryset)
 
         if db_field.name == 'body' and blog_settings.active_editor == 2:
             field.widget = TinyMCE(attrs={'cols': 80, 'rows': 30})
